@@ -1,0 +1,464 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "mobile": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user", "guest", "employee"] },
+        "designation": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "address": { "type": "string" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee information for HR management",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "mobile": { "type": "string" },
+        "email": { "type": "string" },
+        "designation": { "type": "string" },
+        "address": { "type": "string" },
+        "doj": { "type": "string", "format": "date" },
+        "photoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "left"] },
+        "doe": { "type": "string", "format": "date" },
+        "dob": { "type": "string", "format": "date" },
+        "pfNo": { "type": "string" },
+        "esicNo": { "type": "string" }
+      },
+      "required": ["name", "mobile", "email", "designation", "doj", "status"]
+    },
+    "Part": {
+      "title": "Part",
+      "description": "Inventory item in the part catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "plNo": { "type": "string" },
+        "description": { "type": "string" },
+        "partNo": { "type": "string" },
+        "rate": { "type": "number" },
+        "stock": { "type": "number" },
+        "totalValue": { "type": "number" },
+        "location": { "type": "string" }
+      },
+      "required": ["plNo", "description", "partNo", "rate", "stock"]
+    },
+    "Demand": {
+      "title": "Demand",
+      "description": "Demand request for items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "plNo": { "type": "string" },
+        "qty": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["pending", "completed", "rejected"] },
+        "receivedQty": { "type": "number" },
+        "receivedDate": { "type": "string", "format": "date" }
+      },
+      "required": ["plNo", "qty", "date", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Inward/Outward transaction records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "partId": { "type": "string" },
+        "type": { "type": "string", "enum": ["received", "issued", "old_stock"] },
+        "qty": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "receiverName": { "type": "string" },
+        "remarks": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["partId", "type", "qty", "date"]
+    },
+    "ProfileRequest": {
+      "title": "Profile Request",
+      "description": "Employee profile change request pending admin approval",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "mobile": { "type": "string" },
+        "designation": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "address": { "type": "string" },
+        "dob": { "type": "string", "format": "date" },
+        "pfNo": { "type": "string" },
+        "esicNo": { "type": "string" },
+        "doj": { "type": "string", "format": "date" },
+        "photoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string" },
+        "remarks": { "type": "string" }
+      },
+      "required": ["employeeId", "uid", "name", "email", "mobile", "designation", "status", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "read": { "type": "boolean" },
+        "type": { "type": "string" },
+        "targetEmail": { "type": "string" },
+        "target": { "type": "string" },
+        "parentId": { "type": "string" }
+      },
+      "required": ["title", "message", "createdAt", "read"]
+    },
+    "SupportMessage": {
+      "title": "Support Message",
+      "description": "Message/ticket sent to admin and replies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "name": { "type": "string" },
+        "pfNo": { "type": "string" },
+        "email": { "type": "string" },
+        "mobile": { "type": "string" },
+        "designation": { "type": "string" },
+        "message": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "responded", "closed", "pending", "resolved"] },
+        "createdAt": { "type": "string" },
+        "replies": { "type": "array" }
+      },
+      "required": ["employeeId", "name", "message", "status", "createdAt"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "Task Folder",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdByName": { "type": "string" }
+      },
+      "required": ["name", "createdAt", "createdBy"]
+    },
+    "TodoItem": {
+      "title": "TodoItem",
+      "description": "To-Do List Task Item inside a Folder",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "folderId": { "type": "string" },
+        "task": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdByName": { "type": "string" }
+      },
+      "required": ["folderId", "task", "completed", "createdAt", "createdBy"]
+    },
+    "Maintenance": {
+      "title": "Maintenance",
+      "description": "Shift maintenance logs and checklists",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "employeeEmail": { "type": "string" },
+        "machineName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "date": { "type": "string" },
+        "attendedBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "sections": { "type": "array" },
+        "status": { "type": "string" }
+      },
+      "required": ["employeeId", "employeeName", "machineName", "companyName", "date", "attendedBy", "createdAt"]
+    },
+    "ScheduleMaintenance": {
+      "title": "ScheduleMaintenance",
+      "description": "Scheduled interval-based maintenance records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "machineName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "interval": { "type": "string" },
+        "dateTime": { "type": "string" },
+        "attendedBy": { "type": "string" },
+        "remarks": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "employeeName": { "type": "string" }
+      },
+      "required": ["machineName", "companyName", "interval", "dateTime", "attendedBy", "remarks", "status", "createdAt"]
+    },
+    "MachineMovement": {
+      "title": "MachineMovement",
+      "description": "Machine movement log records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "machineName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "fromDateTime": { "type": "string" },
+        "toDateTime": { "type": "string" },
+        "fromType": { "type": "string" },
+        "toType": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "employeeName": { "type": "string" }
+      },
+      "required": ["machineName", "companyName", "fromDateTime", "toDateTime", "createdAt", "createdBy"]
+    },
+    "Breakdown": {
+      "title": "Breakdown",
+      "description": "Breakdown/failure logs and repair reports",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "machineName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "breakdownSection": { "type": "string" },
+        "breakdownReason": { "type": "string" },
+        "preventativeMeasures": { "type": "string" },
+        "breakdownType": { "type": "string" },
+        "dateTime": { "type": "string" },
+        "toDateTime": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "employeeName": { "type": "string" }
+      },
+      "required": ["machineName", "companyName", "breakdownSection", "breakdownReason", "preventativeMeasures", "breakdownType", "dateTime", "createdAt", "createdBy"]
+    },
+    "ServiceEngineerReport": {
+      "title": "ServiceEngineerReport",
+      "description": "Services Engineer visit logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fromDateTime": { "type": "string" },
+        "toDateTime": { "type": "string" },
+        "companyName": { "type": "string" },
+        "engineerName": { "type": "string" },
+        "reason": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "employeeName": { "type": "string" }
+      },
+      "required": ["fromDateTime", "toDateTime", "companyName", "engineerName", "reason", "description", "createdAt", "createdBy"]
+    },
+    "Consumption": {
+      "title": "Consumption",
+      "description": "Fuel and oil consumption reports",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fromDate": { "type": "string", "format": "date" },
+        "toDate": { "type": "string", "format": "date" },
+        "openingBalance": { "type": "number" },
+        "filledHsd": { "type": "number" },
+        "closingBalance": { "type": "number" },
+        "machineName": { "type": "string" },
+        "monthName": { "type": "string" },
+        "calculatedConsumption": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "employeeName": { "type": "string" }
+      },
+      "required": ["fromDate", "toDate", "openingBalance", "filledHsd", "closingBalance", "machineName", "monthName", "calculatedConsumption", "createdAt", "createdBy"]
+    },
+    "DemandLog": {
+      "title": "Demand Log",
+      "description": "Log report record of actions performed on demand requests",
+      "type": "object",
+      "properties": {
+        "demandId": { "type": "string" },
+        "plNo": { "type": "string" },
+        "partNo": { "type": "string" },
+        "description": { "type": "string" },
+        "action": { "type": "string", "enum": ["RETURN", "FORWARD", "REJECT", "APPROVAL"] },
+        "remark": { "type": "string" },
+        "performedByUid": { "type": "string" },
+        "performedByName": { "type": "string" },
+        "performedByEmail": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "newForwardedToName": { "type": "string" }
+      },
+      "required": ["demandId", "plNo", "partNo", "description", "action", "remark", "performedByUid", "performedByName", "timestamp"]
+    },
+    "Setting": {
+      "title": "System Settings",
+      "description": "Global application configuration settings and logos",
+      "type": "object",
+      "properties": {
+        "demandLogo": { "type": "string" },
+        "batchLogo": { "type": "string" },
+        "batchContractorSig": { "type": "string" },
+        "batchRailwaySig": { "type": "string" },
+        "machines": { "type": "array" }
+      }
+    },
+    "UnconnectedMaterialReceipt": {
+      "title": "Unconnected Material Receipt",
+      "description": "Unconnected material receipt record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "zone": { "type": "string" },
+        "division": { "type": "string" },
+        "machineName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "selectMode": { "type": "string", "enum": ["machine", "employee"] },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "partNo": { "type": "string" },
+        "plNo": { "type": "string" },
+        "description": { "type": "string" },
+        "returnedDate": { "type": "string", "format": "date" },
+        "qtyReturned": { "type": "number" },
+        "location": { "type": "string" },
+        "remarks": { "type": "string" },
+        "transactionQty": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["zone", "division", "machineName", "companyName", "partNo", "returnedDate", "qtyReturned", "transactionQty", "createdAt", "createdBy"]
+    },
+    "MachineContract": {
+      "title": "Machine Contract",
+      "description": "Contract linking machines to companies with validity dates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "contractNo": { "type": "string" },
+        "machineName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["active", "transferred", "expired"] },
+        "transferredToCompany": { "type": "string" },
+        "transferDate": { "type": "string", "format": "date" },
+        "remarks": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["contractNo", "machineName", "companyName", "startDate", "endDate", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/unconnected_material_receipts/{receiptId}": {
+      "schema": "UnconnectedMaterialReceipt",
+      "description": "Unconnected material receipts"
+    },
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Employee records"
+    },
+    "/parts/{partId}": {
+      "schema": "Part",
+      "description": "Inventory parts"
+    },
+    "/demands/{demandId}": {
+      "schema": "Demand",
+      "description": "Demand requests"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Transaction history"
+    },
+    "/profile_requests/{requestId}": {
+      "schema": "ProfileRequest",
+      "description": "Profile update request collection"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications"
+    },
+    "/messages/{messageId}": {
+      "schema": "SupportMessage",
+      "description": "Support messages/reset requests from employees to admin"
+    },
+    "/folders/{folderId}": {
+      "schema": "Folder",
+      "description": "Folders for task checklists"
+    },
+    "/folios/{folioId}": {
+      "schema": "Folio",
+      "description": "Folio groups for grouping part catalog items"
+    },
+    "/todos/{todoId}": {
+      "schema": "TodoItem",
+      "description": "Todo/task checklist items linked to folders"
+    },
+    "/maintenance/{maintenanceId}": {
+      "schema": "Maintenance",
+      "description": "Shift maintenance logs and checklists"
+    },
+    "/schedule_maintenance/{scheduleId}": {
+      "schema": "ScheduleMaintenance",
+      "description": "Scheduled interval-based maintenance records"
+    },
+    "/machine_movements/{movementId}": {
+      "schema": "MachineMovement",
+      "description": "Machine movement log records"
+    },
+    "/breakdowns/{breakdownId}": {
+      "schema": "Breakdown",
+      "description": "Breakdown/failure logs and repair reports"
+    },
+    "/service_engineer_reports/{reportId}": {
+      "schema": "ServiceEngineerReport",
+      "description": "Services Engineer visit logs"
+    },
+    "/consumptions/{consumptionId}": {
+      "schema": "Consumption",
+      "description": "Fuel and oil consumption reports"
+    },
+    "/demand_logs/{logId}": {
+      "schema": "DemandLog",
+      "description": "Demand actions log reports history"
+    },
+    "/settings/{documentId}": {
+      "schema": "Setting",
+      "description": "System settings and logos"
+    },
+    "/machine_contracts/{contractId}": {
+      "schema": "MachineContract",
+      "description": "Contracts linking machines to companies"
+    },
+    "/store_items/{itemId}": {
+      "schema": "Part",
+      "description": "Company store inventory items"
+    },
+    "/store_issues/{issueId}": {
+      "schema": "Transaction",
+      "description": "Company store issue vouchers log"
+    }
+  }
+}

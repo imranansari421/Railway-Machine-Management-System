@@ -1,0 +1,312 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - mobile: string (optional)
+    //   - role: string (optional, enum: ["admin", "user", "guest"])
+    //   - designation: string (optional)
+    //   - gender: string (optional, enum: ["Male", "Female", "Other"])
+    //   - address: string (optional)
+    //
+    // Collection: employees
+    // Document ID: {employeeId}
+    // Fields:
+    //   - id: string (optional)
+    //   - name: string (required)
+    //   - mobile: string (required)
+    //   - email: string (required)
+    //   - designation: string (required)
+    //   - address: string (optional)
+    //   - doj: string (required, format: date)
+    //   - photoUrl: string (optional)
+    //   - status: string (required, enum: ["active", "left"])
+    //   - doe: string (optional, format: date)
+    //
+    // Collection: parts
+    // Document ID: {partId}
+    // Fields:
+    //   - id: string (optional)
+    //   - plNo: string (required)
+    //   - description: string (required)
+    //   - partNo: string (required)
+    //   - rate: number (required)
+    //   - stock: number (required)
+    //   - totalValue: number (optional)
+    //   - location: string (optional)
+    //
+    // Collection: demands
+    // Document ID: {demandId}
+    // Fields:
+    //   - id: string (optional)
+    //   - plNo: string (required)
+    //   - qty: number (required)
+    //   - date: string (required, format: date)
+    //   - status: string (required, enum: ["pending", "completed", "rejected"])
+    //   - receivedQty: number (optional)
+    //   - receivedDate: string (optional, format: date)
+    //
+    // Collection: transactions
+    // Document ID: {transactionId}
+    // Fields:
+    //   - id: string (optional)
+    //   - partId: string (required)
+    //   - type: string (required, enum: ["received", "issued", "old_stock"])
+    //   - qty: number (required)
+    //   - date: string (required, format: date)
+    //   - receiverName: string (optional)
+    //   - remarks: string (optional)
+    //   - details: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.uid == "euLJtKM9Bce1ifWffs59H2GxrFC2" ||
+        (request.auth.token != null && request.auth.token.get('email', '') == "imranansari399605@gmail.com") ||
+        (request.auth.token != null && request.auth.token.get('email', '') == "102220971984@billedapp.com") ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accessType', 'limited') == 'full' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accessType', 'limited') == 'admin-light' ||
+          (
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('employeeId', '') != '' &&
+            exists(/databases/$(database)/documents/employees/$(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('employeeId', ''))) &&
+            (
+              get(/databases/$(database)/documents/employees/$(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('employeeId', ''))).data.get('accessType', 'limited') == 'full' ||
+              get(/databases/$(database)/documents/employees/$(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('employeeId', ''))).data.get('accessType', 'limited') == 'admin-light'
+            )
+          )
+         )
+        )
+      );
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && (dateStr == "" || dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'name', 'email']);
+    }
+
+    function isValidEmployee(data) {
+      return hasRequiredFields(['name', 'mobile', 'email', 'designation', 'doj', 'status']);
+    }
+
+    function isValidPart(data) {
+      return hasRequiredFields(['plNo', 'description', 'partNo', 'rate', 'stock']);
+    }
+
+    function isValidDemand(data) {
+      return hasRequiredFields(['plNo', 'qty', 'date', 'status']);
+    }
+
+    function isValidTransaction(data) {
+      return hasRequiredFields(['partId', 'type', 'qty', 'date']);
+    }
+
+    function isValidProfileRequest(data) {
+      return hasRequiredFields(['employeeId', 'uid', 'name', 'email', 'mobile', 'designation', 'status', 'createdAt']);
+    }
+
+    function isValidFolder(data) {
+      return hasRequiredFields(['name', 'createdAt', 'createdBy']) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.createdAt is string &&
+             data.createdBy is string;
+    }
+
+    function isValidTodoItem(data) {
+      return hasRequiredFields(['folderId', 'task', 'completed', 'createdAt', 'createdBy']) &&
+             data.folderId is string && data.folderId.size() <= 128 &&
+             data.task is string && data.task.size() <= 1000 &&
+             data.completed is bool &&
+             data.createdAt is string &&
+             data.createdBy is string;
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if (isOwner(uid) || isAdmin()) && isValidUser(request.resource.data) && 
+                      (!('role' in request.resource.data) || request.resource.data.role in ['user', 'employee'] || isAdmin());
+      allow update: if (isOwner(uid) || isAdmin()) && isValidUser(request.resource.data) && 
+                      (
+                        isAdmin() ||
+                        request.resource.data.role == resource.data.role || 
+                        (!('role' in resource.data) && request.resource.data.role in ['user', 'employee'])
+                      );
+    }
+
+    match /employees/{employeeId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidEmployee(request.resource.data);
+      allow update: if (request.auth != null && isAdmin() && isValidEmployee(request.resource.data)) || (
+        request.auth != null && isAuthenticated() && 
+        (
+          (request.auth.token != null && resource.data.get('email', '').lower() == request.auth.token.get('email', '').lower()) ||
+          (request.auth.token != null && request.auth.token.get('email', '').lower() == resource.data.get('pfNo', '').lower() + '@employee.billedapp.com') ||
+          (request.auth.token != null && request.auth.token.get('email', '').lower() == 'pf' + resource.data.get('pfNo', '').lower() + '@employee.billedapp.com') ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('employeeId', '') == employeeId ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('email', '').lower() == resource.data.get('email', '').lower() ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('email', '').lower() == resource.data.get('pfNo', '').lower() + '@employee.billedapp.com' ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('email', '').lower() == 'pf' + resource.data.get('pfNo', '').lower() + '@employee.billedapp.com'))
+        ) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pin', 'isPinCreated', 'password'])
+      ) || (
+        resource.data.get('firstTimeLogin', false) == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password', 'firstTimeLogin']) &&
+        request.resource.data.get('firstTimeLogin', true) == false
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /parts/{partId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /demands/{demandId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /profile_requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /settings/{documentId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /folders/{folderId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /todos/{todoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidTodoItem(request.resource.data) && request.resource.data.createdBy == request.auth.uid;
+      allow update: if (isAdmin() || resource.data.createdBy == request.auth.uid) && isValidTodoItem(request.resource.data) && (request.resource.data.createdBy == resource.data.createdBy);
+      allow delete: if isAdmin() || resource.data.createdBy == request.auth.uid;
+    }
+
+    match /maintenance/{maintenanceId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /schedule_maintenance/{scheduleId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /machine_movements/{movementId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /breakdowns/{breakdownId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /folios/{folioId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /machine_positions/{machineId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /service_engineer_reports/{reportId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /service_engineer_engines/{engineId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /consumptions/{consumptionId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /demand_logs/{logId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /unconnected_material_receipts/{receiptId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /machine_contracts/{contractId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /store_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /store_issues/{issueId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

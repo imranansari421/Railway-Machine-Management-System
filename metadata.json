@@ -1,0 +1,6 @@
+{
+  "name": "RMMS - Railway Machine Management System",
+  "description": "RMMS - Railway Machine Management System for tracking railway machinery, inventory, demands, and requisitions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
