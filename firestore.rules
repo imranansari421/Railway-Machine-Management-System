@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.uid == "euLJtKM9Bce1ifWffs59H2GxrFC2" ||
+        (request.auth.token != null && (
+          request.auth.token.email == "imranansari399605@gmail.com" ||
+          request.auth.token.email == "102220971984@billedapp.com" ||
+          request.auth.token.email.matches("^master\\..*") ||
+          request.auth.token.email.matches("^admin\\..*") ||
+          request.auth.token.email.matches(".*@admin[.]billedapp[.]com$") ||
+          request.auth.token.email.matches(".*@billedapp[.]com$")
+        )) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accessType', 'limited') == 'full' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accessType', 'limited') == 'admin-light'))
+      );
+    }
+
+    // ===============================================================
+    // Match Rules for Collections
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read, write: if true;
+    }
+
+    match /employees/{employeeId} {
+      allow read, write: if true;
+    }
+
+    match /otps/{otpId} {
+      allow read, write: if true;
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    match /parts/{partId} {
+      allow read, write: if true;
+    }
+
+    match /demands/{demandId} {
+      allow read, write: if true;
+    }
+
+    match /transactions/{transactionId} {
+      allow read, write: if true;
+    }
+
+    match /profile_requests/{requestId} {
+      allow read, write: if true;
+    }
+
+    match /settings/{documentId} {
+      allow read, write: if true;
+    }
+
+    match /messages/{messageId} {
+      allow read, write: if true;
+    }
+
+    match /folders/{folderId} {
+      allow read, write: if true;
+    }
+
+    match /todos/{todoId} {
+      allow read, write: if true;
+    }
+
+    match /maintenance/{maintenanceId} {
+      allow read, write: if true;
+    }
+
+    match /schedule_maintenance/{scheduleId} {
+      allow read, write: if true;
+    }
+
+    match /machine_movements/{movementId} {
+      allow read, write: if true;
+    }
+
+    match /breakdowns/{breakdownId} {
+      allow read, write: if true;
+    }
+
+    match /folios/{folioId} {
+      allow read, write: if true;
+    }
+
+    match /machine_positions/{machineId} {
+      allow read, write: if true;
+    }
+
+    match /service_engineer_reports/{reportId} {
+      allow read, write: if true;
+    }
+
+    match /service_engineer_engines/{engineId} {
+      allow read, write: if true;
+    }
+
+    match /consumptions/{consumptionId} {
+      allow read, write: if true;
+    }
+
+    match /demand_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    match /unconnected_material_receipts/{receiptId} {
+      allow read, write: if true;
+    }
+
+    match /connected_material_receipts/{receiptId} {
+      allow read, write: if true;
+    }
+
+    match /machine_contracts/{contractId} {
+      allow read, write: if true;
+    }
+
+    match /store_items/{itemId} {
+      allow read, write: if true;
+    }
+
+    match /store_issues/{issueId} {
+      allow read, write: if true;
+    }
+
+    match /companies/{companyId} {
+      allow read, write: if true;
+    }
+
+    match /issues/{issueId} {
+      allow read, write: if true;
+    }
+
+    match /critical_spares/{spareId} {
+      allow read, write: if true;
+    }
+
+    match /birthday_wishes/{wishId} {
+      allow read, write: if true;
+    }
+
+    match /deleted_records/{recordId} {
+      allow read, write: if true;
+    }
+
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Default deny for unhandled paths
+    match /{path=**} {
+      allow read, write: if true;
+    }
+  }
+}
